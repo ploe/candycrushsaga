@@ -19,28 +19,49 @@ function lib.new(a)
 	end
 
 	function a:jumpReel(i)
-		reel = i
+		if reel ~= i then
+			self.ticks = 0
+			clip = 1 
+			reel = i
+		end
 	end
 
 	function a:jumpClip(i)
-        clip = i
-    end
+		clip = i
+	end
 
 	function a:prevClip()
 		clip = clip - 1
-    end
+	end
 
 	function a:nextClip()
-        clip = clip + 1
-    end
+		clip = clip + 1
+	end
+
+	function a:setFocus()
+		local x, y
+		x = (self.x + self.w /2) - stage.w / 2 
+		y = (self.y + self.h /2) - stage.h / 2
+		Scene:setViewport(x, y)
+	end
 
 	table.insert(actors, a)
 	return a
 end
 
+-- update is for AI
+
+function lib.update()
+	for k in ipairs(actors) do
+		if actors[k].update then actors[k]:update() end	
+	end
+end
+
+-- draw is for animation
+
 function lib.draw()
 	for k in ipairs(actors) do
-		actors[k]:draw()			
+		if actors[k].draw then actors[k]:draw() end			
 	end
 end
 
