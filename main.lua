@@ -2,7 +2,10 @@ Actors = require("Actors")
 Scene = require("Scene")
 
 start = love.timer.getTime()
-JIFFY = 1/7
+JIFFY = 1/30
+
+local FACE_RIGHT = 0
+local FACE_LEFT = 1
 
 myke = Actors.new { 
 	test = "yes",
@@ -12,25 +15,35 @@ myke = Actors.new {
 	y = 320,
 	w = 100,
 	h = 100,
+	dir = FACE_RIGHT,
+	ticks = 0,
 }
 
 local Mouse = {}
 
 function myke:update()
 	if Mouse["buttonl"] then
-		self.animate = self.walk end
+		self.puck = Mouse.x
+		if self.puck < self.x or self.puck > self.x + self.w then
+			if Mouse.x < self.x then self.dir = FACE_LEFT
+			elseif Mouse.y > self.x + self.w then self.dir = FACE_RIGHT end
+			self.animate = self.walk
+		end
+	end
+
 	if Mouse["buttonr"] then
-		self.animate = self.stood end
+		self.animate = self.stood
+	end
 end
 
 function myke:stood()
 	self:jumpReel(1)
-	if self.ticks == 1 then 
+	self.ticks = self.ticks + 1/4
+	if self.ticks == 1 then
+		self:nextClip()
+	elseif self.ticks == 2 then 
 		self:prevClip()
 		self.ticks = 0
-	else 
-		self:nextClip()
-		self.ticks = 1
 	end
 
 	self:setFocus()
@@ -39,8 +52,7 @@ end
 
 function myke:chat()
 	self:jumpReel(2)
-
-	self.ticks = self.ticks + 1
+	self.ticks = self.ticks + 1/4
 	if self.ticks ~= 4 then self:nextClip()
 	else
 		self:jumpClip(1)
@@ -52,19 +64,25 @@ function myke:chat()
 end
 
 function myke:walk()
-	self:jumpReel(3)
+	self:jumpReel(3+self.dir)
+	local vector = 4
+	if self.dir == FACE_LEFT then vector = -vector end
 
-	self.ticks = self.ticks + 1
-	if self.ticks <= 2 then self:nextClip()
-		self.x = self.x + 15
-	elseif self.ticks <= 4 then 
-		self:prevClip()
-		self.x = self.x + 15
-		if(self.ticks == 4) then self.ticks = 0 end
+	self.ticks = self.ticks + 1/4
+	self.x = self.x + vector
+	if math.floor(self.ticks) == self.ticks then
+		if self.ticks <= 2 then
+			self:nextClip()
+		elseif self.ticks <= 4 then 
+			self:prevClip()
+			if(self.ticks == 4) then self.ticks = 0 end
+		end
 	end
 
 	self:setFocus()
-	return myke.animate
+	
+	if self.puck > self.x and self.puck < self.x + self.w then return self.stood end
+	return self.walk
 end
 
 myke.animate = myke.stood
@@ -88,12 +106,16 @@ local bunting2 = Actors.new {
 }
 
 function bunting1:animate()
-	if self.ticks then 
-		self:jumpReel(1)
-		self.ticks = false
-	else
-		self:jumpReel(2)
-		self.ticks = true
+	self.ticks = self.ticks + 1/4
+
+	if math.floor(self.ticks) == self.ticks  then
+		if self.boil then 
+			self:jumpReel(1)
+			self.boil = false
+		else
+			self:jumpReel(2)
+			self.boil = true
+		end
 	end
 
 	return self.animate
@@ -113,7 +135,6 @@ function love.update()
 	Actors.update()
 end
 
-font = love.graphics.setNewFont("Anonymous.ttf", 16)
 stage = {w = 640, h = 480}
 love.window.setMode(stage.w, stage.h)
 love.graphics.setBackgroundColor(251,149,134)
@@ -128,7 +149,6 @@ function love.mousepressed(x, y, button)
 	Mouse.x = love.mouse.getX() + Scene.x
 	Mouse.y = love.mouse.getY() + Scene.y
 	Mouse["button" .. button] = true
-	print(button)
 end
 
 function love.mousereleased(x, y, button)

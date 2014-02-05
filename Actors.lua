@@ -3,7 +3,6 @@ local lib = {}
 
 function lib.new(a)
 	if type(a) ~= "table" or not a.tag then return nil end
-
 	if not a.costume then return nil end
 	local costume = love.graphics.newImage(a.costume)
 
@@ -11,6 +10,7 @@ function lib.new(a)
 	local reel = 1
 	local clip = 1
 	local quad = love.graphics.newQuad(a.w * (clip-1), a.h *(reel-1), a.w, a.h, costume:getWidth(), costume:getHeight())
+	a.ticks = 0
 
 	function a:draw()
 		quad:setViewport(a.w * (clip-1), a.h * (reel-1), a.w, a.h)
